@@ -1,0 +1,28 @@
+Source: libedit
+Section: libs
+Priority: optional
+Maintainer: Maxwell <maxwell@blueberrypieos.com>
+Build-Depends: pietoolchain (>= 0.1.0)
+Standards-Version: 4.7.3
+Homepage: https://github.com/apple-oss-distributions/libedit
+Vcs-Git: https://github.com/blueberrypieos/libedit.git -b blueberry-pie-os/latest
+Vcs-Browser: https://github.com/blueberrypieos/libedit
+Rules-Requires-Root: no
+
+Package: libedit
+Architecture: darwin-arm64
+Essential: yes
+Priority: required
+Depends: libsystem, ncurses
+Description: line editing library (editline, readline)
+ BSD editline library with command history, line editing and a readline
+ compatibility interface.
+
+Package: libedit-dev
+Section: libdevel
+Priority: optional
+Architecture: darwin-arm64
+Depends: libedit (= ${binary:Version})
+Description: line editing library: development files
+ Public histedit and readline headers for building against libedit.
+ The link-time dylib aliases are supplied by libedit.

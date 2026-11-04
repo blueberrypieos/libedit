@@ -1,0 +1,48 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026 The Blueberry Pie OS Authors
+
+include /usr/share/pietoolchain/rules.mk
+
+SOURCES := $(addprefix src/,chared.c common.c el.c emacs.c filecomplete.c hist.c history.c \
+	keymacro.c map.c parse.c prompt.c read.c readline.c refresh.c search.c sig.c terminal.c \
+	tokenizer.c tty.c unvis.c vi.c vis.c chartype.c eln.c wcsdup.c) \
+	$(addprefix local/,fcns.c help.c historyn.c tokenizern.c)
+OBJS    := $(patsubst %.c,$(OBJ)/%.o,$(SOURCES))
+DYLIB   := $(OBJ)/libedit.3.dylib
+
+FLAGS := $(BASE_CFLAGS) -std=gnu99 -I$(CURDIR)/debian -I$(SRCROOT) -I$(SRCROOT)/src -I$(SRCROOT)/local \
+	-Wno-deprecated-non-prototype
+
+all: $(DYLIB)
+
+$(OBJ)/%.o: $(SRCROOT)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(FLAGS) -c $< -o $@
+
+$(DYLIB): $(OBJS)
+	$(CC) $(BASE_LDFLAGS) -dynamiclib -install_name /usr/lib/libedit.3.dylib \
+		-compatibility_version 2 -current_version 3.0 \
+		-Wl,-unexported_symbols_list,$(CURDIR)/debian/unexports $(OBJS) -lncurses -o $@
+
+install: $(DYLIB)
+	install -d $(ROOT)/usr/lib $(ROOT)/usr/include/editline $(ROOT)/usr/include/readline
+	install -m 755 $(DYLIB) $(ROOT)/usr/lib/
+	set -e; for l in libedit.2.dylib libedit.3.0.dylib libedit.dylib libreadline.dylib; do \
+		ln -sf libedit.3.dylib $(ROOT)/usr/lib/$$l; \
+	done
+	install -m 644 $(SRCROOT)/src/histedit.h $(ROOT)/usr/include/
+	install -m 644 $(SRCROOT)/src/editline/readline.h $(ROOT)/usr/include/editline/
+	ln -sf ../editline/readline.h $(ROOT)/usr/include/readline/readline.h
+	ln -sf ../editline/readline.h $(ROOT)/usr/include/readline/history.h
+	install -d $(ROOT)/usr/share/man/man3 $(ROOT)/usr/share/man/man5
+	install -m 644 $(SRCROOT)/doc/editline.3 $(ROOT)/usr/share/man/man3/
+	install -m 644 $(SRCROOT)/doc/editrc.5 $(ROOT)/usr/share/man/man5/
+	set -e; for m in el_deletestr el_end el_get el_getc el_gets el_history \
+		el_history_end el_history_init el_init el_insertstr el_line el_parse \
+		el_push el_reset el_resize el_set el_source el_tok_end el_tok_init \
+		el_tok_line el_tok_reset el_tok_str; do \
+		ln -sf editline.3 $(ROOT)/usr/share/man/man3/$$m.3; \
+	done
+
+.PHONY: all install
